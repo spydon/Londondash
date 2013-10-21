@@ -1,0 +1,185 @@
+/** Add css rules here for your application. */
+
+
+/** Example rules used by the template application (remove for your app) */
+h1 {
+  font-size: 2em;
+  font-weight: bold;
+/*   color: #777777; */
+/*   margin: 40px 0px 70px; */
+  text-align: center;
+  color:#ffffee;
+  text-shadow: 2px 2px #000;
+}
+
+body {
+	background: white !important;
+}
+
+/* gwt-viz-container { */
+/* 	background: #2E2E2E !important; */
+/* } */
+
+.error, .warning {
+	color: red !important;
+	font-weight:bold;
+	font-size:14px;
+}
+
+.noData {
+	text-align: center;
+}
+
+.normal {
+	color: black !important;
+	font-weight:normal;	
+}
+
+.header {
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding: 10px;
+	border-radius: 5px;
+	margin: 50px 0px 10px;
+}
+
+.header, .topHeader, .rootTable h2 {
+	box-shadow: 0px 3px 3px #000;
+	background:#199fd2;
+	background:-moz-linear-gradient(top,  #199fd2 0%, #2C3539 150%);
+	background:-webkit-gradient(linear, left top, left bottom, color-stop(0%,#199fd2), color-stop(150%,#2C3539));
+	background:-webkit-linear-gradient(top,  #199fd2 0%,#2C3539 150%);
+	background:-o-linear-gradient(top, #199fd2 0%,#2C3539 150%);
+	background:-ms-linear-gradient(top, #199fd2 0%,#2C3539 150%);
+	background:linear-gradient(top,  #199fd2 0%,#2C3539 150%);
+	filter:progid:DXImageTransform.Microsoft.gradient( startColorstr='#199fd2', endColorstr='#30576e',GradientType=0);
+}
+
+.header h2 {
+	margin: 0 25px;
+	color:#ffffee;
+	text-shadow: 2px 2px #000;
+}
+
+.header h3, .header .gwt-Image {
+	margin-top:0px;
+	margin-left:35px;
+	color:#ffffee;
+	text-shadow: 2px 2px #000;
+}
+
+.rootTable h2 {
+	color:#ffffee;
+	text-shadow: 2px 2px #000;
+	text-decoration: none;
+	padding: 10px;
+	border-radius: 5px;
+}
+
+.header .gwt-Label {
+	color:#fff;
+}
+
+.tableLeft {
+	border-radius: 10px;
+	box-shadow: 0px 4px 4px #000;
+}
+
+.tableRight .gwt-Image {
+	margin-top: 13px;
+}
+
+h2{
+/* 	text-decoration:underline; */
+}
+/* .gwt-viz-container { */
+/* 	border-radius: 10px; */
+/* 	box-shadow: 0px 4px 0px #000;	 */
+/* }  */
+
+.topHeader {
+	position:fixed;
+	text-align: center;
+/* 	width:100%; */
+	padding-top: 5px;
+	top: 0;
+	left: 50%;
+ 	margin-left: -420px; /* The length of the toolbar */
+	z-index:999;
+    opacity: 0.8;
+}
+
+.topHeader * {
+	margin: 0 5px;
+}
+
+.topHeader .gwt-Label {
+	margin-top: 5px;
+}
+
+.autoPanel .gwt-Label {
+	margin-top: 0px;
+}
+
+.autoPanel .gwt-CheckBox {
+	margin-left: 30px;
+}
+
+.autoPanel {
+	text-align: center;	
+}
+
+.centerText * {
+	text-align: center !important;	
+}
+
+.sendButton {
+  display: block;
+  font-size: 16pt;
+}
+
+/** Most GWT widgets already have a style name defined */
+.gwt-DialogBox {
+  width: 400px;
+}
+
+.dialogVPanel {
+  margin: 5px;
+}
+
+.serverResponseLabelError.rootTable .gwt-Image {
+	text-align: center;
+	color: red;
+}
+
+/** Set ids using widget.getElement().setId("idOfElement") */
+#closeButton {
+  margin: 15px 6px 6px;
+}
+
+.rootTable {
+/*   text-align: center; */
+/*   border: 1px solid; */
+  overflow-y: scroll;
+  overflow-x: hidden;
+}
+
+.rootTable .gwt-Image {
+	display: block;
+	margin-left: auto;
+    margin-right: auto;
+}
+
+.rootTable td {
+  vertical-align: top !important;
+  margin-top: 0px !important;
+}
+
+.noHorizontalScroll {
+  overflow-y: scroll;
+  overflow-x: hidden;
+}
+
+.tableLeft {
+  margin-top: 5% !important;
+}
