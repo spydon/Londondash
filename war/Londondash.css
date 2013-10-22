@@ -13,7 +13,20 @@ h1 {
 }
 
 body {
-	background: white !important;
+	background-color: white !important;
+}
+
+.logo {
+	position:fixed;
+	top: 3px;
+	left: 50%;
+ 	margin-left: -460px;
+	z-index:999;
+}
+
+.graphbox {
+	float: right;
+	margin-right: 40px;
 }
 
 /* gwt-viz-container { */

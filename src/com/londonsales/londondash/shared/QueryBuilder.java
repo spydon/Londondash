@@ -10,7 +10,6 @@ public class QueryBuilder implements Serializable {
 	private String where;
 	private String groupBy;
 	private String orderBy;
-
 	
 	public QueryBuilder(String select, String from, String where, String groupBy, String orderBy) {
 		this.select = select;
@@ -55,6 +54,15 @@ public class QueryBuilder implements Serializable {
 	
 	public String setGroupBy(String groupBy) {
 		this.groupBy = groupBy;
+		return getQuery();
+	}
+	
+	public String appendGroupBy(String groupBy) {
+		if(groupBy.equals("")) {
+			this.groupBy = groupBy;
+		} else {
+			this.groupBy = this.groupBy + ", " + groupBy;
+		}
 		return getQuery();
 	}
 	

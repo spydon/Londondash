@@ -45,6 +45,7 @@ import com.google.gwt.visualization.client.visualizations.corechart.AreaChart;
 import com.google.gwt.visualization.client.visualizations.corechart.BarChart;
 import com.google.gwt.visualization.client.visualizations.corechart.ColumnChart;
 import com.google.gwt.visualization.client.visualizations.corechart.CoreChart;
+import com.google.gwt.visualization.client.visualizations.corechart.CoreChart.Type;
 import com.google.gwt.visualization.client.visualizations.corechart.LineChart;
 import com.google.gwt.visualization.client.visualizations.corechart.Options;
 import com.google.gwt.visualization.client.visualizations.corechart.PieChart;
@@ -158,6 +159,7 @@ public class Londondash implements EntryPoint {
 			}
 		});
 		loginBox.center();
+		passwordTB.setFocus(true);
 	}
 	
 	private void firstInit() {
@@ -166,9 +168,12 @@ public class Londondash implements EntryPoint {
 		t.getColumnFormatter().setWidth(1, "70%");
 		t.setStylePrimaryName("rootTable");
 		RootPanel r = RootPanel.get();
+		Image logo = new Image("images/logo4.png");
+		logo.setStylePrimaryName("logo");
 		r.setStyleName("noHorizontalScroll");
 		r.add(initHeader());
 		r.add(initSubHeader());
+		r.add(logo);
 		r.add(t);
 		updateRegions();
 		updateStores();
@@ -212,6 +217,8 @@ public class Londondash implements EntryPoint {
 
 	private void createChart(final String name, final String stmt,
 			final CoreChart.Type type, final FlowPanel container) {
+		container.clear();
+		container.add(new Image(loadUrl));
 		statsService.getDataTable(company, stmt, new AsyncCallback<String>() {
 
 			@Override
@@ -262,8 +269,23 @@ public class Londondash implements EntryPoint {
 						break;
 					}
 					if (!isTable) {
+						final GraphBox graphBox = new GraphBox();
+						graphBox.setStyleName("graphbox");
+						graphBox.setSelectedIndex(graphBox.getGraphIndex(type.name()));
+						graphBox.addChangeHandler(new ChangeHandler() {
+							
+							@Override
+							public void onChange(ChangeEvent event) {
+								createChart(
+										name,
+										stmt,
+										getChartType(graphBox), 
+										container);
+							}
+						});
 						//chart.addSelectHandler(createSelectHandler(chart));
 						container.add(chart);
+						container.add(graphBox);
 					}
 				} else {
 					HTML noData = new HTML("<h3>No data available for the requested time span.</h3>");
@@ -419,14 +441,13 @@ public class Londondash implements EntryPoint {
 				String option = dateLb.getItemText(dateLb.getSelectedIndex());
 				if (option.equals("Today")) {
 					dateFrom = "DATEADD(dd, DATEDIFF(dd, 0, getDate()), 0)";
-					dateTo = "getdate()";
+					dateTo = "DATEADD(dd, DATEDIFF(dd, 0, getDate()), 1)";
 				} else if (option.equals("Yesterday")) {
 					dateFrom = "DATEADD(d,DATEDIFF(dd, 1, getdate()), 0)";
 					dateTo = "DATEADD(dd, DATEDIFF(dd, 0, getDate()), 0)";
 				} else if (option.equals("This week")) {
 					dateFrom = "DATEADD(week, DATEDIFF(week, 0, getdate()), 0)";
-					//dateFrom = "DATEADD(wk, DATEDIFF(wk,0,GETDATE()), 0)";
-					dateTo = "getdate()";
+					dateTo = "DATEADD(dd, DATEDIFF(dd, 0, getDate()), 1)";
 				} else if (option.equals("Last week")) {
 					dateFrom = "DATEADD(wk,DATEDIFF(wk,7,GETDATE()),0)";
 					dateTo = "DATEADD(wk,DATEDIFF(wk,7,GETDATE()),6)";
@@ -629,12 +650,19 @@ public class Londondash implements EntryPoint {
 		gross.add(new Image("../images/loading.gif"));
 		profit.add(new Image("../images/loading.gif"));
 		QueryBuilder q1 = new QueryBuilder(
-				"SUM(Gross)",
-				"Sales_Transactions_Header ",
+				"SUM(Sales_Transactions_Header.Gross)",
+				"Sales_Transactions_Header",
 				"Sales_Type = 'INVOICE' AND Sale_Date >= " + from + " AND Sale_Date <= " + to,
 				"",
 				"");
-		if(region!=-1) {
+		
+		if(!store.equals("")) {
+			q1.appendFrom("CROSS APPLY "
+					+ "(SELECT TOP 1 Sales_Transactions_Lines.Transaction_No, Sales_Transactions_Lines.Store_ID "
+					+ "FROM Sales_Transactions_Lines "
+					+ "WHERE Sales_Transactions_Lines.Transaction_No = Sales_Transactions_Header.Transaction_No) STL2");
+			q1.appendWhere("STL2.Store_ID = " + storeIDs.get(storeLb.getItemText(storeLb.getSelectedIndex())));
+		} else if(region!=-1) {
 			q1.appendFrom("INNER JOIN Division ON Division.ID = Branch_ID");
 			q1.appendWhere("Division.Region_ID = " + region);
 		}
@@ -655,7 +683,7 @@ public class Londondash implements EntryPoint {
 						gross.add(new HTML("<h3>$"+result+"</h3>"));
 			}
 		});
-		statsService.getString(company, q1.setSelect("SUM(Net)-SUM(Cost)"), new AsyncCallback<String>() {
+		statsService.getString(company, q1.setSelect("SUM(Sales_Transactions_Header.Net)-SUM(Sales_Transactions_Header.Cost)"), new AsyncCallback<String>() {
 
 			@Override
 			public void onFailure(Throwable caught) {
@@ -687,17 +715,15 @@ public class Londondash implements EntryPoint {
 				t.clear();
 				
 				// Setting up the Location Total section
-				FlowPanel chartPanel1 = new FlowPanel();
+				final FlowPanel chartPanel1 = new FlowPanel();
 				FlowPanel tablePanel1 = new FlowPanel();
-				chartPanel1.add(new Image(loadUrl));
-				tablePanel1.add(new Image(loadUrl));
 				
 				//Building table for the locations total
-				QueryBuilder q1 = new QueryBuilder(
-						"TOP 10 Division.Name, ROUND(SUM(Gross), 0) AS 'Total($)'",
+				final QueryBuilder q1 = new QueryBuilder(
+						"Division.Name, ROUND(SUM(Gross), 0) AS 'Total($)'",
 						"Sales_Transactions_Header INNER JOIN Division ON Sales_Transactions_Header.Branch_ID = Division.ID",
 						"Sales_Type = 'INVOICE' AND Sale_Date >= " + from + " AND Sale_Date <= "	+ to,
-						"Division.Name",
+						"Division.Name HAVING ROUND(SUM(Gross), 0) > 0",
 						"'Total($)' DESC");
 				if(region!=-1)
 					q1.appendWhere("Division.Region_ID = " + region);
@@ -713,12 +739,23 @@ public class Londondash implements EntryPoint {
 						q1.setOrderBy(""),
 						CoreChart.Type.PIE, chartPanel1);
 				addSection("Total Sales by Location", tablePanel1, chartPanel1, null);
-
+				
+				//Adds the possibility to change the graph type
+//				final GraphBox graphBox1 = new GraphBox(3);
+//				graphBox1.addChangeHandler(new ChangeHandler() {
+//					
+//					@Override
+//					public void onChange(ChangeEvent event) {
+//						createChart(
+//								"Total Sales by Division",
+//								q1.setOrderBy(""),
+//								getChartType(graphBox1), chartPanel1);
+//					}
+//				});
+//				chartPanel1.add(graphBox1);
 				// Setting up Employee Total section
 				FlowPanel chartPanel2 = new FlowPanel();
 				FlowPanel tablePanel2 = new FlowPanel();
-				chartPanel2.add(new Image(loadUrl));
-				tablePanel2.add(new Image(loadUrl));
 				
 				//Building table for the Employee total
 				QueryBuilder q2 = new QueryBuilder(
@@ -750,8 +787,6 @@ public class Londondash implements EntryPoint {
 				// Setting up Payment type section
 				FlowPanel chartPanel3 = new FlowPanel();
 				FlowPanel tablePanel3 = new FlowPanel();
-				chartPanel3.add(new Image(loadUrl));
-				tablePanel3.add(new Image(loadUrl));
 				
 				QueryBuilder q3 = new QueryBuilder(
 						"Payment_Type, SUM(Amount_Payment) As Amount",
@@ -783,14 +818,12 @@ public class Londondash implements EntryPoint {
 				FlowPanel chartPanel4 = new FlowPanel();
 				FlowPanel tablePanel4 = new FlowPanel();
 				tablePanel4.setStylePrimaryName("centerText");
-				chartPanel4.add(new Image(loadUrl));
-				tablePanel4.add(new Image(loadUrl));
 				
 				QueryBuilder q4 = new QueryBuilder(
 						"Description, Part_No, AVG(Gross) As Avg_Gross, COUNT(*) As Qty",
 						"Sales_Transactions_Lines",
-						"Sales_Transactions_Lines.Modified_Date >= " + from + " AND Sales_Transactions_Lines.Modified_Date <= " + to,
-						"Part_No, Description HAVING AVG(Gross) > 0",
+						"Part_No <> '.GADJUSTMENT' AND Sales_Transactions_Lines.Modified_Date >= " + from + " AND Sales_Transactions_Lines.Modified_Date <= " + to,
+						"Part_No, Description HAVING AVG(Gross) >= 0",
 						"Part_No");
 				
 				if(!store.equals("")) {
@@ -808,13 +841,12 @@ public class Londondash implements EntryPoint {
 				createChart(
 						"Total Sales by Product",
 						q4.setSelect("Description, COUNT(*) As Qty"),
-						CoreChart.Type.AREA, chartPanel4);
+						CoreChart.Type.COLUMNS, chartPanel4);
 				addSection("Total Sales by Product", tablePanel4,
 						chartPanel4, null);
 				
 				// Setting up invoices section
 				FlowPanel tablePanel5 = new FlowPanel();
-				tablePanel5.add(new Image(loadUrl));
 				QueryBuilder q5 = new QueryBuilder(
 						"TOP 300 Sales_Transactions_Header.Transaction_No, Division.Name As Division, "
 						+ "Operators.Full_Name, Sales_Transactions_Header.Sale_Date, Sales_Transactions_Header.Net, "
@@ -840,7 +872,6 @@ public class Londondash implements EntryPoint {
 				FlowPanel tablePanel6 = new FlowPanel();
 				
 				if(!store.equals("")) {
-					tablePanel6.add(new Image(loadUrl));
 					QueryBuilder q6 = new QueryBuilder(
 							"Part_No, Description, Cast(Qty_In_Stores As Integer) As Qty_In_Stores, Cast(Stock_Count_Qty As Integer) As Stock_Count_Qty",
 							store,
@@ -872,6 +903,12 @@ public class Londondash implements EntryPoint {
 		VisualizationUtils.loadVisualizationApi(chartLoadCallback,
 				ColumnChart.PACKAGE);
 	}
+	
+	private Type getChartType(GraphBox box) {
+		return CoreChart.Type.valueOf(box.getItemText(box.getSelectedIndex()));
+	}
+	
+	
 
 	private void dateBox() {
 		// Create dialogbox for the pickers to live, love and fight in.
