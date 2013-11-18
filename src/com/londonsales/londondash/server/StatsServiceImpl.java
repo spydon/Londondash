@@ -2,10 +2,10 @@ package com.londonsales.londondash.server;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.PreparedStatement;
 import java.util.HashMap;
 
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
@@ -23,16 +23,16 @@ public class StatsServiceImpl extends RemoteServiceServlet implements StatsServi
 
     private Connection getConnection(String company) {
         try {
-        		int companyNumber = 0;
-        		switch(company.toLowerCase()) {
-	        		case "or":
-	        			companyNumber = 1;
-	        			break;
-	        		case "jericho":
-	        			companyNumber = 0;
-	        			break;
-        		}
-        		
+                int companyNumber = 0;
+                switch(company.toLowerCase()) {
+                    case "or":
+                        companyNumber = 1;
+                        break;
+                    case "jericho":
+                        companyNumber = 0;
+                        break;
+                }
+
                 Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
                 conn = DriverManager.getConnection(getConnectionUrl(companyNumber));
 
@@ -45,146 +45,149 @@ public class StatsServiceImpl extends RemoteServiceServlet implements StatsServi
         }
         return conn;
     }
-    
+
     // 0 is Jericho
     // 1 is OR
     private String getConnectionUrl(int company) {
-    	String url = "";
-    	if(company < serverName.length && company >= 0)
-    		url = "jdbc:sqlserver://" + serverName[company] + ";user=" + userName[company]
+        String url = "";
+        if(company < serverName.length && company >= 0)
+            url = "jdbc:sqlserver://" + serverName[company] + ";user=" + userName[company]
                         + ";password=" + password[company] + ";databaseName=" + databaseName[company]
-                        + ";";		
+                        + ";";
         return url;
     }
-	
-	@Override
-	public String getDataTable(String company, String stmt) {
-		String json = "";
-		try {
-			Connection conn = getConnection(company);
-			PreparedStatement ps = conn.prepareStatement(stmt);
-		    ResultSet rs = ps.executeQuery();
-		    json = convert(rs);
-		    rs.close();
-		    ps.close();
-		    conn.close();
-		} catch(SQLException e) {
-			e.printStackTrace();
-		}
-		return json;
-	}
-	
-	public String getString(String company, String stmt) {
-		String result = "";
-		try {
-			Connection conn = getConnection(company);
-			PreparedStatement ps = conn.prepareStatement(stmt);
-		    ResultSet rs = ps.executeQuery();
-		    if(rs.next())
-		    	result = rs.getString(1);
-		    rs.close();
-		    ps.close();
-		    conn.close();
-		} catch(SQLException e) {
-			e.printStackTrace();
-		}
-		return result == null ? "" : result;
-	}
-	
-	public HashMap<String, Integer> getRegions(String company) {
-		HashMap<String, Integer> result = new HashMap<String, Integer>();
-		try {
-			Connection conn = getConnection(company);
-			PreparedStatement ps = conn.prepareStatement("SELECT ID, Name from regions");
-		    ResultSet rs = ps.executeQuery();
-		    while(rs.next())
-		    	result.put(rs.getString("Name"), rs.getInt("ID"));
-		    rs.close();
-		    ps.close();
-		    conn.close();
-		} catch(SQLException e) {
-			e.printStackTrace();
-		}
-		return result;
-	}
-	
-	public HashMap<String, String> getStores(String company) {
-		HashMap<String, String> result = new HashMap<String, String>();
-		try {
-			Connection conn = getConnection(company);
-			PreparedStatement ps = conn.prepareStatement("SELECT ID, Name, Data_Table FROM stores WHERE ID <> 1 AND Is_Stock = 1 ORDER BY Name");
-		    ResultSet rs = ps.executeQuery();
-		    while(rs.next())
-		    	result.put(rs.getString("Name"), rs.getString("Data_Table") + ":" + rs.getString("ID"));
-		    rs.close();
-		    ps.close();
-		    conn.close();
-		} catch(SQLException e) {
-			e.printStackTrace();
-		}
-		return result;
-	}
-	
-	//Maintaining JSON manually to preserve order
-	private String convert(ResultSet rs) throws SQLException {
-		String json = "[";
-		ResultSetMetaData rsmd = rs.getMetaData();
-		int numColumns = rsmd.getColumnCount();
-		while (rs.next()) {
-		    String obj = "{";
-		    for (int i = 1; i < numColumns + 1; i++) {
-		    	if(!obj.equals("{"))
-		    		obj = obj.concat(",");
-		        String column_name = rsmd.getColumnName(i);
-		        if (rsmd.getColumnType(i) == java.sql.Types.BIGINT) {
-		            obj = obj.concat("\"" + column_name + "\":[" + rs.getLong(column_name) + "]");
-		        } else if (rsmd.getColumnType(i) == java.sql.Types.REAL) {
-		            obj = obj.concat("\"" + column_name + "\":[" + rs.getFloat(column_name) + "]");
-		        } else if (rsmd.getColumnType(i) == java.sql.Types.BOOLEAN) {
-		            obj = obj.concat("\"" + column_name + "\":[" + rs.getBoolean(column_name) + "]");
-		        } else if (rsmd.getColumnType(i) == java.sql.Types.DOUBLE) {
-		            obj = obj.concat("\"" + column_name + "\":[" + rs.getDouble(column_name) + "]");
-		        } else if (rsmd.getColumnType(i) == java.sql.Types.FLOAT) {
-		            obj = obj.concat("\"" + column_name + "\":[" + rs.getDouble(column_name) + "]");
-		        } else if (rsmd.getColumnType(i) == java.sql.Types.INTEGER) {
-		            obj = obj.concat("\"" + column_name + "\":[" + rs.getInt(column_name) + "]");
-		        } else if (rsmd.getColumnType(i) == java.sql.Types.NVARCHAR) {
-		            obj = obj.concat("\"" + column_name + "\":[" + rs.getNString(column_name) + "]");
-		        } else if (rsmd.getColumnType(i) == java.sql.Types.VARCHAR) {
-		            obj = obj.concat("\"" + column_name + "\":[" + rs.getString(column_name) + "]");
-		        } else if (rsmd.getColumnType(i) == java.sql.Types.CHAR) {
-		            obj = obj.concat("\"" + column_name + "\":[" + rs.getString(column_name) + "]");
-		        } else if (rsmd.getColumnType(i) == java.sql.Types.NCHAR) {
-		            obj = obj.concat("\"" + column_name + "\":[" + rs.getNString(column_name) + "]");
-		        } else if (rsmd.getColumnType(i) == java.sql.Types.LONGNVARCHAR) {
-		            obj = obj.concat("\"" + column_name + "\":[" + rs.getNString(column_name) + "]");
-		        } else if (rsmd.getColumnType(i) == java.sql.Types.LONGVARCHAR) {
-		            obj = obj.concat("\"" + column_name + "\":[" + rs.getString(column_name) + "]");
-		        } else if (rsmd.getColumnType(i) == java.sql.Types.TINYINT) {
-		            obj = obj.concat("\"" + column_name + "\":[" + rs.getByte(column_name) + "]");
-		        } else if (rsmd.getColumnType(i) == java.sql.Types.SMALLINT) {
-		            obj = obj.concat("\"" + column_name + "\":[" + rs.getShort(column_name) + "]");
-		        } else if (rsmd.getColumnType(i) == java.sql.Types.DATE) {
-		            obj = obj.concat("\"" + column_name + "\":[" + rs.getDate(column_name) + "]");
-		        } else if (rsmd.getColumnType(i) == java.sql.Types.TIME) {
-		            obj = obj.concat("\"" + column_name + "\":[" + rs.getTime(column_name) + "]");
-		        } else if (rsmd.getColumnType(i) == java.sql.Types.TIMESTAMP) {
-		            obj = obj.concat("\"" + column_name + "\":[" + rs.getTimestamp(column_name) + "]");
-		        } else if (rsmd.getColumnType(i) == java.sql.Types.BIT) {
-		            obj = obj.concat("\"" + column_name + "\":[" + rs.getBoolean(column_name) + "]");
-		        } else if (rsmd.getColumnType(i) == java.sql.Types.NUMERIC) {
-		            obj = obj.concat("\"" + column_name + "\":[" + rs.getBigDecimal(column_name) + "]");
-		        } else if (rsmd.getColumnType(i) == java.sql.Types.DECIMAL) {
-		            obj = obj.concat("\"" + column_name + "\":[" + rs.getBigDecimal(column_name) + "]");
-		        } else {
-		            obj = obj.concat("\"" + column_name + "\":[\"" + rs.getString(i) + "\"]");
-		        }
-		    }
 
-		    if(!json.equals("["))
-		    	json = json.concat(",");
-		    json = json.concat(obj.concat("}"));
-		}
-		return json.concat("]");
-	}
+    @Override
+    public String getDataTable(String company, String stmt) {
+        String json = "";
+        try {
+            Connection conn = getConnection(company);
+            PreparedStatement ps = conn.prepareStatement(stmt);
+            ResultSet rs = ps.executeQuery();
+            json = convert(rs);
+            rs.close();
+            ps.close();
+            conn.close();
+        } catch(SQLException e) {
+            e.printStackTrace();
+        }
+        return json;
+    }
+
+    @Override
+    public String getString(String company, String stmt) {
+        String result = "";
+        try {
+            Connection conn = getConnection(company);
+            PreparedStatement ps = conn.prepareStatement(stmt);
+            ResultSet rs = ps.executeQuery();
+            if(rs.next())
+                result = rs.getString(1);
+            rs.close();
+            ps.close();
+            conn.close();
+        } catch(SQLException e) {
+            e.printStackTrace();
+        }
+        return result == null ? "" : result;
+    }
+
+    @Override
+    public HashMap<String, Integer> getRegions(String company) {
+        HashMap<String, Integer> result = new HashMap<String, Integer>();
+        try {
+            Connection conn = getConnection(company);
+            PreparedStatement ps = conn.prepareStatement("SELECT ID, Name from regions");
+            ResultSet rs = ps.executeQuery();
+            while(rs.next())
+                result.put(rs.getString("Name"), rs.getInt("ID"));
+            rs.close();
+            ps.close();
+            conn.close();
+        } catch(SQLException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    @Override
+    public HashMap<String, String> getStores(String company) {
+        HashMap<String, String> result = new HashMap<String, String>();
+        try {
+            Connection conn = getConnection(company);
+            PreparedStatement ps = conn.prepareStatement("SELECT ID, Name, Data_Table FROM stores WHERE ID <> 1 AND Is_Stock = 1 ORDER BY Name");
+            ResultSet rs = ps.executeQuery();
+            while(rs.next())
+                result.put(rs.getString("Name"), rs.getString("Data_Table") + ":" + rs.getString("ID"));
+            rs.close();
+            ps.close();
+            conn.close();
+        } catch(SQLException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    //Maintaining JSON manually to preserve order
+    private String convert(ResultSet rs) throws SQLException {
+        String json = "[";
+        ResultSetMetaData rsmd = rs.getMetaData();
+        int numColumns = rsmd.getColumnCount();
+        while (rs.next()) {
+            String obj = "{";
+            for (int i = 1; i < numColumns + 1; i++) {
+                if(!obj.equals("{"))
+                    obj = obj.concat(",");
+                String column_name = rsmd.getColumnName(i);
+                if (rsmd.getColumnType(i) == java.sql.Types.BIGINT) {
+                    obj = obj.concat("\"" + column_name + "\":[" + rs.getLong(column_name) + "]");
+                } else if (rsmd.getColumnType(i) == java.sql.Types.REAL) {
+                    obj = obj.concat("\"" + column_name + "\":[" + rs.getFloat(column_name) + "]");
+                } else if (rsmd.getColumnType(i) == java.sql.Types.BOOLEAN) {
+                    obj = obj.concat("\"" + column_name + "\":[" + rs.getBoolean(column_name) + "]");
+                } else if (rsmd.getColumnType(i) == java.sql.Types.DOUBLE) {
+                    obj = obj.concat("\"" + column_name + "\":[" + rs.getDouble(column_name) + "]");
+                } else if (rsmd.getColumnType(i) == java.sql.Types.FLOAT) {
+                    obj = obj.concat("\"" + column_name + "\":[" + rs.getDouble(column_name) + "]");
+                } else if (rsmd.getColumnType(i) == java.sql.Types.INTEGER) {
+                    obj = obj.concat("\"" + column_name + "\":[" + rs.getInt(column_name) + "]");
+                } else if (rsmd.getColumnType(i) == java.sql.Types.NVARCHAR) {
+                    obj = obj.concat("\"" + column_name + "\":[" + rs.getNString(column_name) + "]");
+                } else if (rsmd.getColumnType(i) == java.sql.Types.VARCHAR) {
+                    obj = obj.concat("\"" + column_name + "\":[" + rs.getString(column_name) + "]");
+                } else if (rsmd.getColumnType(i) == java.sql.Types.CHAR) {
+                    obj = obj.concat("\"" + column_name + "\":[" + rs.getString(column_name) + "]");
+                } else if (rsmd.getColumnType(i) == java.sql.Types.NCHAR) {
+                    obj = obj.concat("\"" + column_name + "\":[" + rs.getNString(column_name) + "]");
+                } else if (rsmd.getColumnType(i) == java.sql.Types.LONGNVARCHAR) {
+                    obj = obj.concat("\"" + column_name + "\":[" + rs.getNString(column_name) + "]");
+                } else if (rsmd.getColumnType(i) == java.sql.Types.LONGVARCHAR) {
+                    obj = obj.concat("\"" + column_name + "\":[" + rs.getString(column_name) + "]");
+                } else if (rsmd.getColumnType(i) == java.sql.Types.TINYINT) {
+                    obj = obj.concat("\"" + column_name + "\":[" + rs.getByte(column_name) + "]");
+                } else if (rsmd.getColumnType(i) == java.sql.Types.SMALLINT) {
+                    obj = obj.concat("\"" + column_name + "\":[" + rs.getShort(column_name) + "]");
+                } else if (rsmd.getColumnType(i) == java.sql.Types.DATE) {
+                    obj = obj.concat("\"" + column_name + "\":[" + rs.getDate(column_name) + "]");
+                } else if (rsmd.getColumnType(i) == java.sql.Types.TIME) {
+                    obj = obj.concat("\"" + column_name + "\":[" + rs.getTime(column_name) + "]");
+                } else if (rsmd.getColumnType(i) == java.sql.Types.TIMESTAMP) {
+                    obj = obj.concat("\"" + column_name + "\":[" + rs.getTimestamp(column_name) + "]");
+                } else if (rsmd.getColumnType(i) == java.sql.Types.BIT) {
+                    obj = obj.concat("\"" + column_name + "\":[" + rs.getBoolean(column_name) + "]");
+                } else if (rsmd.getColumnType(i) == java.sql.Types.NUMERIC) {
+                    obj = obj.concat("\"" + column_name + "\":[" + rs.getBigDecimal(column_name) + "]");
+                } else if (rsmd.getColumnType(i) == java.sql.Types.DECIMAL) {
+                    obj = obj.concat("\"" + column_name + "\":[" + rs.getBigDecimal(column_name) + "]");
+                } else {
+                    obj = obj.concat("\"" + column_name + "\":[\"" + rs.getString(i) + "\"]");
+                }
+            }
+
+            if(!json.equals("["))
+                json = json.concat(",");
+            json = json.concat(obj.concat("}"));
+        }
+        return json.concat("]");
+    }
 }
