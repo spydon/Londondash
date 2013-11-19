@@ -6,6 +6,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
@@ -101,6 +102,26 @@ public class StatsServiceImpl extends RemoteServiceServlet implements StatsServi
             ResultSet rs = ps.executeQuery();
             while(rs.next())
                 result.put(rs.getString("Name"), rs.getInt("ID"));
+            rs.close();
+            ps.close();
+            conn.close();
+        } catch(SQLException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    @Override
+    public ArrayList<String> getProducts(String company) {
+        ArrayList<String> result = new ArrayList<String>();
+        try {
+            Connection conn = getConnection(company);
+            PreparedStatement ps = conn.prepareStatement("SELECT Part_No, Description "
+                    + "FROM Sales_Transactions_Lines WHERE Part_No <> '.GADJUSTMENT' AND Part_No <> '..' AND Description <> ' ' "
+                    + "AND Part_No <> '..' GROUP BY Part_no, Description ORDER BY Part_No;");
+            ResultSet rs = ps.executeQuery();
+            while(rs.next())
+                result.add(rs.getString("Part_No") + " > " + rs.getString("Description"));
             rs.close();
             ps.close();
             conn.close();

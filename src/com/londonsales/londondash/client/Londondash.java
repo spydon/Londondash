@@ -1,5 +1,6 @@
 package com.londonsales.londondash.client;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -24,13 +25,16 @@ import com.google.gwt.user.client.ui.DialogBox;
 import com.google.gwt.user.client.ui.FlexTable;
 import com.google.gwt.user.client.ui.FlowPanel;
 import com.google.gwt.user.client.ui.HTML;
+import com.google.gwt.user.client.ui.HTMLTable.Cell;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Image;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.ListBox;
+import com.google.gwt.user.client.ui.MultiWordSuggestOracle;
 import com.google.gwt.user.client.ui.Panel;
 import com.google.gwt.user.client.ui.PasswordTextBox;
 import com.google.gwt.user.client.ui.RootPanel;
+import com.google.gwt.user.client.ui.SuggestBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.datepicker.client.DatePicker;
 import com.google.gwt.visualization.client.AbstractDataTable;
@@ -39,6 +43,7 @@ import com.google.gwt.visualization.client.DataTable;
 import com.google.gwt.visualization.client.VisualizationUtils;
 import com.google.gwt.visualization.client.visualizations.Table;
 import com.google.gwt.visualization.client.visualizations.corechart.AreaChart;
+import com.google.gwt.visualization.client.visualizations.corechart.AxisOptions;
 import com.google.gwt.visualization.client.visualizations.corechart.BarChart;
 import com.google.gwt.visualization.client.visualizations.corechart.ColumnChart;
 import com.google.gwt.visualization.client.visualizations.corechart.CoreChart;
@@ -75,6 +80,9 @@ public class Londondash implements EntryPoint {
     private final ListBox regionsLb = new ListBox();
     private final ListBox storeLb = new ListBox();
     private final HTML headerName = new HTML("<h1>OR Dashboard</h1>");
+    private final MultiWordSuggestOracle productOracle = new MultiWordSuggestOracle();
+    private final ArrayList<SuggestBox> productList = new ArrayList<SuggestBox>();
+
 
     private enum Placement {
         LEFT, RIGHT, FULL
@@ -83,6 +91,7 @@ public class Londondash implements EntryPoint {
     private final String loadUrl = "../images/loading2.gif";
     private String dateFrom = "DATEADD(d, DATEDIFF(d, 0, getdate()), 0)";
     private String dateTo = "getdate()";
+    private String dateOption = "Today";
     private final Label lastUpdate = new Label();
     private final Label countDown = new Label();
     private final CheckBox autoUpdateCB = new CheckBox();
@@ -172,7 +181,7 @@ public class Londondash implements EntryPoint {
         update(dateFrom, dateTo);
     }
 
-    private void addSection(String name, FlowPanel table, FlowPanel chart, HorizontalPanel options) {
+    private void addSection(String name, Panel table, Panel chart, HorizontalPanel options) {
         if (table != null && chart != null) {
             table.setStylePrimaryName("tableLeft");
             chart.setStylePrimaryName("tableRight");
@@ -208,84 +217,90 @@ public class Londondash implements EntryPoint {
     }
 
     private void createChart(final String name, final String stmt,
-            final CoreChart.Type type, final FlowPanel container) {
-        container.clear();
-        container.add(new Image(loadUrl));
-        statsService.getDataTable(company, stmt, new AsyncCallback<String>() {
+            final CoreChart.Type type, final Panel container, final boolean clearContainer) {
+        if(clearContainer)
+            container.clear();
 
-            @Override
-            public void onFailure(Throwable caught) {
-                container.add(new HTML("<h3>Failed to connect to the server.</h3>"));
-            }
+        if(type != null) {
+            final Image loadImage = new Image(loadUrl);
+            container.add(loadImage);
+            statsService.getDataTable(company, stmt, new AsyncCallback<String>() {
 
-            @Override
-            public void onSuccess(String json) {
-                container.clear();
-                if (!json.equals("[]")) {
-                    AbstractDataTable dt = toDataTable(json);
-                    CoreChart chart = null;
-                    Boolean isTable = false;
-                    switch (type) {
-                    case PIE:
-                        chart = new PieChart(dt, createOptions(Placement.RIGHT,
-                                name));
-                        break;
-                    case COLUMNS:
-                        chart = new ColumnChart(dt, createOptions(
-                                Placement.RIGHT, name));
-                        break;
-                    case BARS:
-                        chart = new BarChart(dt, createOptions(
-                                Placement.RIGHT, name));
-                        break;
-                    case AREA:
-                        chart = new AreaChart(dt, createOptions(
-                                Placement.RIGHT, name));
-                        break;
-                    case LINE:
-                        chart = new LineChart(dt, createOptions(
-                                Placement.RIGHT, name));
-                        break;
-                    case SCATTER:
-                        chart = new ScatterChart(dt, createOptions(
-                                Placement.RIGHT, name));
-                        break;
-                    case NONE:
-                        Table table = new Table(dt, createTableOptions());
-                        // table.addSelectHandler(createSelectHandler(table));
-                        container.add(table);
-                        isTable = true;
-                        break;
-                    default:
-                        chart = new ColumnChart(dt, createOptions(Placement.RIGHT, name));
-                        break;
-                    }
-                    if (!isTable) {
-                        final GraphBox graphBox = new GraphBox();
-                        graphBox.setStyleName("graphbox");
-                        graphBox.setSelectedIndex(graphBox.getGraphIndex(type.name()));
-                        graphBox.addChangeHandler(new ChangeHandler() {
-
-                            @Override
-                            public void onChange(ChangeEvent event) {
-                                createChart(
-                                        name,
-                                        stmt,
-                                        getChartType(graphBox),
-                                        container);
-                            }
-                        });
-                        //chart.addSelectHandler(createSelectHandler(chart));
-                        container.add(chart);
-                        container.add(graphBox);
-                    }
-                } else {
-                    HTML noData = new HTML("<h3>No data available for the requested time span.</h3>");
-                    noData.setStylePrimaryName("noData");
-                    container.add(noData);
+                @Override
+                public void onFailure(Throwable caught) {
+                    container.add(new HTML("<h3>Failed to connect to the server.</h3>"));
                 }
-            }
-        });
+
+                @Override
+                public void onSuccess(String json) {
+                    container.remove(loadImage);
+                    if (!json.equals("[]")) {
+                        AbstractDataTable dt = toDataTable(json);
+                        CoreChart chart = null;
+                        Boolean isTable = false;
+                        switch (type) {
+                        case PIE:
+                            chart = new PieChart(dt, createOptions(Placement.RIGHT,
+                                    name));
+                            break;
+                        case COLUMNS:
+                            chart = new ColumnChart(dt, createOptions(
+                                    Placement.RIGHT, name));
+                            break;
+                        case BARS:
+                            chart = new BarChart(dt, createOptions(
+                                    Placement.RIGHT, name));
+                            break;
+                        case AREA:
+                            chart = new AreaChart(dt, createOptions(
+                                    Placement.RIGHT, name));
+                            break;
+                        case LINE:
+                            chart = new LineChart(dt, createOptions(
+                                    Placement.RIGHT, name));
+                            break;
+                        case SCATTER:
+                            chart = new ScatterChart(dt, createOptions(
+                                    Placement.RIGHT, name));
+                            break;
+                        case NONE:
+                            Table table = new Table(dt, createTableOptions());
+                            // table.addSelectHandler(createSelectHandler(table));
+                            container.add(table);
+                            isTable = true;
+                            break;
+                        default:
+                            chart = new ColumnChart(dt, createOptions(Placement.RIGHT, name));
+                            break;
+                        }
+                        if (!isTable) {
+                            final GraphBox graphBox = new GraphBox();
+                            graphBox.setStyleName("graphbox");
+                            graphBox.setSelectedIndex(graphBox.getGraphIndex(type.name()));
+                            graphBox.addChangeHandler(new ChangeHandler() {
+
+                                @Override
+                                public void onChange(ChangeEvent event) {
+                                    createChart(
+                                            name,
+                                            stmt,
+                                            getChartType(graphBox),
+                                            container,
+                                            true);
+                                }
+                            });
+                            //chart.addSelectHandler(createSelectHandler(chart));
+                            container.add(chart);
+                            container.add(graphBox);
+                        }
+                    } else {
+                        HTML noData = new HTML("<h3>No data available for the requested time span.</h3>");
+                        noData.setStylePrimaryName("noData");
+                        container.add(noData);
+                    }
+                }
+            });
+        }
     }
 
     private Options createOptions(Placement column, String name) {
@@ -296,6 +311,11 @@ public class Londondash implements EntryPoint {
         options.setHeight(height);
         options.setTitle(name);
         options.set("is3D", true);
+        options.setInterpolateNulls(false);
+        AxisOptions vAxisOptions = AxisOptions.create();
+        vAxisOptions.setMinValue(0);
+        options.setVAxisOptions(vAxisOptions);
+
         return options;
     }
 
@@ -313,6 +333,102 @@ public class Londondash implements EntryPoint {
 
     private int getColumnHeight() {
         return (int) (t.getOffsetWidth() * 0.25);
+    }
+
+    private void createProductControl(final FlexTable suggestTable, final Panel chartPanel, final int row, String productText, boolean active) {
+        final SuggestBox productField = new SuggestBox(this.productOracle);
+        final Button newTag = new Button("+");
+        final Button delTag = new Button("-");
+        HorizontalPanel buttonPanel = new HorizontalPanel();
+        buttonPanel.add(newTag);
+        buttonPanel.add(delTag);
+        suggestTable.setWidget(row, 0, productField);
+        suggestTable.setWidget(row, 1, buttonPanel);
+        productField.setFocus(active);
+        productField.setEnabled(active);
+        productField.setText(productText);
+        productField.setTitle("Start writing to choose a product to compare with in the text box, if it doesn't exist the box will turn red.");
+        productList.add(productField);
+        newTag.addClickHandler(new ClickHandler() {
+            @Override
+            public void onClick(ClickEvent event) {
+                if(!productField.getText().equals("") && productField.getText().contains(">")) {
+                    productField.removeStyleName("oracleError");
+                    Cell cell = suggestTable.getCellForEvent(event);
+                    suggestTable.insertRow(cell.getRowIndex()+1);
+                    createProductControl(suggestTable, chartPanel, cell.getRowIndex()+1, "", true);
+                    productField.setEnabled(false);
+                    createChart(
+                            "Product Development",
+                            generateProductQuery().getQuery(),
+                            ((dateOption.equals("This year") || dateOption.equals("Custom")) ? CoreChart.Type.AREA : CoreChart.Type.BARS), chartPanel, true);
+                } else {
+                    productField.addStyleName("oracleError");
+                }
+            }
+        });
+        delTag.addClickHandler(new ClickHandler() {
+            @Override
+            public void onClick(ClickEvent event) {
+                Cell cell = suggestTable.getCellForEvent(event);
+                productList.remove(productField);
+
+                if(suggestTable.getRowCount() > 1) {
+                    suggestTable.removeRow(cell.getRowIndex());
+                } else {
+                    productField.setText("");
+                    productField.setEnabled(true);
+                }
+
+                if(productField.getText().contains(">")) {
+                    createChart(
+                            "Product Development",
+                            generateProductQuery().getQuery(),
+                            CoreChart.Type.LINE, chartPanel, true);
+                }
+            }
+        });
+        productField.addKeyUpHandler(new KeyUpHandler() {
+            @Override
+            public void onKeyUp(KeyUpEvent event) {
+//                if (event.getNativeKeyCode() == KeyCodes.KEY_ENTER)
+//                    newTag.click();
+            }
+        });
+    }
+
+    public QueryBuilder generateProductQuery() {
+        QueryBuilder q = new QueryBuilder(
+                "DATENAME(m,l1.modified_date) As Month",
+                "Sales_Transactions_Lines As l1",
+                "l1.modified_date >= " + dateFrom + " AND l1.modified_date <= " + dateTo,
+                "DATENAME(m,l1.modified_date), DATEPART(MM,l1.modified_date)",
+                "DATEPART(MM,l1.modified_date)");
+        ArrayList<String> productNumbers = new ArrayList<String>();
+        for(SuggestBox box : productList) {
+            if(box.getText().equals(""))
+                continue;
+            String partNo = box.getText().substring(0, box.getText().indexOf(">")-1);
+            if(!productNumbers.contains(partNo))
+                productNumbers.add(partNo);
+        }
+        //TODO
+        for(String partNo : productNumbers) {
+            int i = productNumbers.indexOf(partNo);
+            String storeQ = !store.equals("") ? "AND l0" + i + ".Store_ID = " + storeIDs.get(storeLb.getItemText(storeLb.getSelectedIndex())) : "";
+            String regionQ = region!=-1 && store.equals("") ? "AND l00" + i + ".Region_ID = " + region : "";
+            q.appendSelect("[" + partNo + "]");
+            q.appendFrom("LEFT OUTER JOIN (SELECT DATENAME(m,l0" + i + ".modified_date) As Month, Count(*) As '" + partNo + "' " +
+                    "FROM Sales_Transactions_Lines l0" + i + " " +
+                    "INNER JOIN Sales_Transactions_Header l3" + i + " ON l3" + i + ".Transaction_No = l0" + i + ".Transaction_No " +
+                    "INNER JOIN Division l00" + i + " ON l00" + i + ".ID = l3" + i + ".Branch_ID " +
+                    "WHERE Part_No = '" + partNo + "' " + storeQ + regionQ +
+                    " GROUP BY DATENAME(m,l0" + i + ".modified_date), DATEPART(MM,l0" + i + ".modified_date)) l2" + i +
+                    " ON DATENAME(m,l1.modified_date) = l2" + i + ".Month ");
+            q.appendGroupBy("[" + partNo + "]");
+        }
+        System.out.println(q.getQuery());
+        return q;
     }
 
 //    @DEPRECATED
@@ -358,6 +474,20 @@ public class Londondash implements EntryPoint {
 //            }
 //        };
 //    }
+
+    public void updateProductOracle() {
+        statsService.getProducts(company, new AsyncCallback<ArrayList<String>>() {
+            @Override
+            public void onFailure(Throwable caught) {
+
+            }
+
+            @Override
+            public void onSuccess(ArrayList<String> result) {
+                productOracle.addAll(result);
+            }
+        });
+    }
 
     public static DataTable toDataTable(String json) {
         DataTable dt = DataTable.create();
@@ -430,35 +560,35 @@ public class Londondash implements EntryPoint {
         dateLb.addChangeHandler(new ChangeHandler() {
             @Override
             public void onChange(ChangeEvent event) {
-                String option = dateLb.getItemText(dateLb.getSelectedIndex());
-                if (option.equals("Today")) {
+                dateOption = dateLb.getItemText(dateLb.getSelectedIndex());
+                if (dateOption.equals("Today")) {
                     dateFrom = "DATEADD(dd, DATEDIFF(dd, 0, getDate()), 0)";
                     dateTo = "DATEADD(dd, DATEDIFF(dd, 0, getDate()), 1)";
-                } else if (option.equals("Yesterday")) {
+                } else if (dateOption.equals("Yesterday")) {
                     dateFrom = "DATEADD(d,DATEDIFF(dd, 1, getdate()), 0)";
                     dateTo = "DATEADD(dd, DATEDIFF(dd, 0, getDate()), 0)";
-                } else if (option.equals("This week")) {
+                } else if (dateOption.equals("This week")) {
                     dateFrom = "DATEADD(week, DATEDIFF(week, 0, getdate()), 0)";
                     dateTo = "DATEADD(dd, DATEDIFF(dd, 0, getDate()), 1)";
-                } else if (option.equals("Last week")) {
+                } else if (dateOption.equals("Last week")) {
                     dateFrom = "DATEADD(wk,DATEDIFF(wk,7,GETDATE()),0)";
                     dateTo = "DATEADD(wk,DATEDIFF(wk,7,GETDATE()),6)";
-                } else if (option.equals("This month")) {
+                } else if (dateOption.equals("This month")) {
                     dateFrom = "DATEADD(s,-1,DATEADD(mm, DATEDIFF(m,0,GETDATE()),0))";
                     dateTo = "getdate()";
-                } else if (option.equals("Last month")) {
+                } else if (dateOption.equals("Last month")) {
                     dateFrom = "DATEADD(s,-1,DATEADD(mm, DATEDIFF(m,0,GETDATE())-1,0))";
                     dateTo = "DATEADD(s,-1,DATEADD(mm, DATEDIFF(m,0,GETDATE()),0))";
-                } else if (option.equals("This year")) {
+                } else if (dateOption.equals("This year")) {
                     dateFrom = "DATEADD(YEAR, DATEDIFF(YEAR, 0, GETDATE()), 0)";
                     dateTo = "getdate()";
-                } else if (option.equals("Custom")) {
+                } else if (dateOption.equals("Custom")) {
                     dateBox();
                 } else {
                     dateFrom = "DATEADD(dd, DATEDIFF(dd, 0, getDate()), 0)";
                     dateTo = "getdate()";
                 }
-                if (!option.equals("Custom"))
+                if (!dateOption.equals("Custom"))
                     update(dateFrom, dateTo);
             }
         });
@@ -472,6 +602,8 @@ public class Londondash implements EntryPoint {
                 String option = companyLb.getItemText(companyLb
                         .getSelectedIndex());
                 if (!option.equals(company)) {
+                    productList.clear();
+
                     company = option.toLowerCase();
                     region = -1;
                     updateRegions();
@@ -607,7 +739,6 @@ public class Londondash implements EntryPoint {
                 storeLb.addItem("All");
                 Iterator<Entry<String, String>> it = result.entrySet().iterator();
                 while (it.hasNext()) {
-                    @SuppressWarnings("unchecked")
                     Map.Entry<String, String> pairs = it.next();
                     String key = pairs.getKey();
                     String value = pairs.getValue();
@@ -727,13 +858,13 @@ public class Londondash implements EntryPoint {
                 createChart(
                         "Total Sales by Division",
                         q1.getQuery(),
-                        CoreChart.Type.NONE, tablePanel1);
+                        CoreChart.Type.NONE, tablePanel1, true);
 
                 //Building graph for the locations total
                 createChart(
                         "Total Sales by Division",
                         q1.setOrderBy(""),
-                        CoreChart.Type.PIE, chartPanel1);
+                        CoreChart.Type.PIE, chartPanel1, true);
                 addSection("Total Sales by Location", tablePanel1, chartPanel1, null);
 
                 //Adds the possibility to change the graph type
@@ -771,14 +902,83 @@ public class Londondash implements EntryPoint {
                 createChart(
                         "Total Sales by Employee",
                         q2.getQuery(),
-                        CoreChart.Type.NONE, tablePanel2);
+                        CoreChart.Type.NONE, tablePanel2, true);
 
                 //Building graph for the Employee total
                 createChart(
                         "Total Sales by Employee",
                         q2.getQuery(),
-                        CoreChart.Type.PIE, chartPanel2);
+                        CoreChart.Type.PIE, chartPanel2, true);
                 addSection("Total Sales by Employee", tablePanel2, chartPanel2, null);
+
+                // Setting up product development
+                updateProductOracle();
+                FlowPanel chartPanel5 = new FlowPanel();
+                VerticalPanel productPanel = new VerticalPanel();
+                FlexTable productTable = new FlexTable();
+                Label instructions = new Label("Start writing in the box to choose products");
+                @SuppressWarnings("unchecked")
+                ArrayList<SuggestBox> tmpList = (ArrayList<SuggestBox>) productList.clone();
+                for(SuggestBox box : productList)
+                    if(box.getText().equals(""))
+                        tmpList.remove(box);
+                productList.clear();
+                for(SuggestBox box : tmpList)
+                    createProductControl(productTable, chartPanel5, tmpList.indexOf(box), box.getText(), false);
+                createProductControl(productTable, chartPanel5, tmpList.size(), "", true);
+                if(productList.size() > 0 && productList.get(0).getText().contains(">")) {
+                    createChart(
+                            "Product Development",
+                            generateProductQuery().getQuery(),
+                            ((dateOption.equals("This year") || dateOption.equals("Custom")) ? CoreChart.Type.AREA : CoreChart.Type.BARS), chartPanel5, true);
+                }
+
+                //TODO
+                productPanel.add(instructions);
+                productPanel.add(productTable);
+
+                //Building graph for the product development total
+                createChart(
+                        "Product Development",
+                        null,
+                        null, productPanel, false);
+
+//                createChart(
+//                        "Product Development",
+//                        q5.getQuery(),
+//                        CoreChart.Type.LINE, chartPanel5, true);
+                addSection("Product Development", productPanel, chartPanel5, null);
+
+                // Setting up total sales by product section
+                FlowPanel chartPanel4 = new FlowPanel();
+                FlowPanel tablePanel4 = new FlowPanel();
+                tablePanel4.setStylePrimaryName("centerText");
+
+                QueryBuilder q4 = new QueryBuilder(
+                        "Description, Part_No, AVG(l.Gross) As Avg_Gross, COUNT(*) As Qty",
+                        "Sales_Transactions_Lines l INNER JOIN Sales_Transactions_Header h on l.Transaction_No = h.Transaction_No",
+                        "Sales_Type = 'INVOICE' AND Part_No <> '.GADJUSTMENT' AND l.Modified_Date >= " + from + " AND l.Modified_Date <= " + to,
+                        "Part_No, Description HAVING AVG(l.Gross) >= 0",
+                        "Qty Desc");
+
+                if(!store.equals("")) {
+                    q4.appendWhere("l.Store_ID = " + storeIDs.get(storeLb.getItemText(storeLb.getSelectedIndex())));
+                } else if(region!=-1) {
+                    q4.appendFrom("INNER JOIN Division ON Division.ID = h.Branch_ID");
+                    q4.appendWhere("Division.Region_ID = " + region);
+                }
+                //Building table for the product section
+                createChart(
+                        "Total Sales by Product (Table)",
+                        q4.getQuery(),
+                        CoreChart.Type.NONE, tablePanel4, true);
+                //Building graph for the product section
+                createChart(
+                        "Total Sales by Product (Chart)",
+                        q4.setSelect("Description, COUNT(*) As Qty"),
+                        CoreChart.Type.COLUMNS, chartPanel4, true);
+                addSection("Total Sales by Product (Chart)", chartPanel4, null, null);
+                addSection("Total Sales by Product (Table)", tablePanel4, null, null);
 
                 // Setting up Payment type section
                 FlowPanel chartPanel3 = new FlowPanel();
@@ -801,64 +1001,14 @@ public class Londondash implements EntryPoint {
                 createChart(
                         "Total Sales by Payment Method",
                         q3.getQuery(),
-                        CoreChart.Type.NONE, tablePanel3);
+                        CoreChart.Type.NONE, tablePanel3, true);
                 //Building graph for the payment total
                 createChart(
                         "Total Sales by Payment Method",
                         q3.getQuery(),
-                        CoreChart.Type.COLUMNS, chartPanel3);
+                        CoreChart.Type.COLUMNS, chartPanel3, true);
                 addSection("Total Sales by Payment Method", tablePanel3,
                         chartPanel3, null);
-
-                // Setting up total sales by product section
-                FlowPanel chartPanel4 = new FlowPanel();
-                FlowPanel tablePanel4 = new FlowPanel();
-                tablePanel4.setStylePrimaryName("centerText");
-
-                QueryBuilder q4 = new QueryBuilder(
-                        "Description, Part_No, AVG(l.Gross) As Avg_Gross, COUNT(*) As Qty",
-                        "Sales_Transactions_Lines l INNER JOIN Sales_Transactions_Header h on l.Transaction_No = h.Transaction_No",
-                        "Sales_Type = 'INVOICE' AND Part_No <> '.GADJUSTMENT' AND l.Modified_Date >= " + from + " AND l.Modified_Date <= " + to,
-                        "Part_No, Description HAVING AVG(l.Gross) >= 0",
-                        "Qty Desc");
-
-                if(!store.equals("")) {
-                    q4.appendWhere("Store_ID = " + storeIDs.get(storeLb.getItemText(storeLb.getSelectedIndex())));
-                } else if(region!=-1) {
-                    q4.appendFrom("INNER JOIN Division ON Division.ID = Store_ID");
-                    q4.appendWhere("Division.Region_ID = " + region);
-                }
-                //Building table for the product section
-                createChart(
-                        "Total Sales by Product (Table)",
-                        q4.getQuery(),
-                        CoreChart.Type.NONE, tablePanel4);
-                //Building graph for the product section
-                createChart(
-                        "Total Sales by Product (Chart)",
-                        q4.setSelect("Description, COUNT(*) As Qty"),
-                        CoreChart.Type.COLUMNS, chartPanel4);
-                addSection("Total Sales by Product (Chart)", chartPanel4, null, null);
-                addSection("Total Sales by Product (Table)", tablePanel4, null, null);
-
-//                // Setting up product development
-//                FlowPanel tablePanel5 = new FlowPanel();
-//                QueryBuilder q5 = new QueryBuilder(
-//                        "DATENAME(m,modified_date) As Month, Count(*) As 'OR24'",
-//                        "Sales_Transactions_Lines",
-//                        "Part_No = 'OR-24' AND modified_date >= " + from + " AND modified_date <= " + to,
-//                        "DATENAME(m,modified_date), DATEPART(MM,modified_date)",
-//                        "");
-//                if(!store.equals("")) {
-//                    q5.appendWhere("Store_ID = " + storeIDs.get(storeLb.getItemText(storeLb.getSelectedIndex())));
-//                } else if(region!=-1) {
-//                    q5.appendWhere("Division.Region_ID = " + region);
-//                }
-//                createChart(
-//                        "Product Development",
-//                        q5.getQuery(),
-//                        CoreChart.Type.LINE, tablePanel5);
-//                addSection("Product Development", tablePanel5, null, null);
 
                 // Setting up invoices section
                 FlowPanel tablePanel6 = new FlowPanel();
@@ -880,7 +1030,7 @@ public class Londondash implements EntryPoint {
                 createChart(
                         "Invoices",
                         q6.getQuery(),
-                        CoreChart.Type.NONE, tablePanel6);
+                        CoreChart.Type.NONE, tablePanel6, true);
                 addSection("Invoices", tablePanel6, null, null);
 
                 // Setting up stock section
@@ -896,7 +1046,7 @@ public class Londondash implements EntryPoint {
                     createChart(
                             "Stock",
                             q7.getQuery(),
-                            CoreChart.Type.NONE, tablePanel7);
+                            CoreChart.Type.NONE, tablePanel7, true);
                     addSection("Stock", tablePanel7, null, null);
                 } else {
                     tablePanel7.add(new HTML("<h3>Please choose a specific store.</h3>"));
@@ -1013,21 +1163,22 @@ public class Londondash implements EntryPoint {
                 + "<b>Tips and tricks</b><br />"
                 + "<ul><li>Change any graph by using the graph chooser underneath each graph</li>"
                 + "<li>Hold over each part of the graph to get more information</li>"
-                + "<li>Order the table after a different column by pressing the column name</li></ul>"
+                + "<li>Order the table after a different column by pressing the column name</li>"
+                + "<li>Start writing in the procuct development section box and it will give you suggestions</li></ul>"
                 + "If you need further help, send a mail to <a href=\"mailto:lukas.klingsbo@gmail.com\">lukas.klingsbo@gmail.com</a>");
 
         // Add button to cancel the current operation
-        Button cancel = new Button("Ok");
-        cancel.addClickHandler(new ClickHandler() {
+        Button ok = new Button("Ok");
+        ok.addClickHandler(new ClickHandler() {
             @Override
             public void onClick(ClickEvent event) {
                 db.hide();
             }
         });
-        cancel.setWidth("100%");
+        ok.setWidth("100%");
 
         panel.add(text);
-        panel.add(cancel);
+        panel.add(ok);
         // Add the HTML to the box
         db.setWidget(panel);
         db.center();

@@ -1,2 +1,0 @@
-serviceClass: com.londonsales.londondash.client.StatsService
-path: D76AA4DD5FFDE86FFC5972FD8B3EA2BF.gwt.rpc

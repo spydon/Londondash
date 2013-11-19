@@ -13,137 +13,141 @@ h1 {
 }
 
 body {
-	background-color: white !important;
+    background-color: white !important;
 }
 
 .logo {
-	position:fixed;
-	top: 3px;
-	left: 50%;
- 	margin-left: -460px;
-	z-index:999;
+    position:fixed;
+    top: 3px;
+    left: 50%;
+     margin-left: -460px;
+    z-index:999;
 }
 
 .graphbox {
-	float: right;
-	margin-right: 40px;
+    float: right;
+    margin-right: 40px;
 }
 
 /* gwt-viz-container { */
-/* 	background: #2E2E2E !important; */
+/*     background: #2E2E2E !important; */
 /* } */
 
 .error, .warning {
-	color: red !important;
-	font-weight:bold;
-	font-size:14px;
+    color: red !important;
+    font-weight:bold;
+    font-size:14px;
+}
+
+.oracleError {
+	background-color: pink;
 }
 
 .noData {
-	text-align: center;
+    text-align: center;
 }
 
 .normal {
-	color: black !important;
-	font-weight:normal;	
+    color: black !important;
+    font-weight:normal;    
 }
 
 .header {
     margin-left: auto !important;
     margin-right: auto !important;
     padding: 10px;
-	border-radius: 5px;
-	margin: 50px 0px 10px;
+    border-radius: 5px;
+    margin: 50px 0px 10px;
 }
 
 .header, .topHeader, .rootTable h2 {
-	box-shadow: 0px 3px 3px #000;
-	background:#199fd2;
-	background:-moz-linear-gradient(top,  #199fd2 0%, #2C3539 150%);
-	background:-webkit-gradient(linear, left top, left bottom, color-stop(0%,#199fd2), color-stop(150%,#2C3539));
-	background:-webkit-linear-gradient(top,  #199fd2 0%,#2C3539 150%);
-	background:-o-linear-gradient(top, #199fd2 0%,#2C3539 150%);
-	background:-ms-linear-gradient(top, #199fd2 0%,#2C3539 150%);
-	background:linear-gradient(top,  #199fd2 0%,#2C3539 150%);
-	filter:progid:DXImageTransform.Microsoft.gradient( startColorstr='#199fd2', endColorstr='#30576e',GradientType=0);
+    box-shadow: 0px 3px 3px #000;
+    background:#199fd2;
+    background:-moz-linear-gradient(top,  #199fd2 0%, #2C3539 150%);
+    background:-webkit-gradient(linear, left top, left bottom, color-stop(0%,#199fd2), color-stop(150%,#2C3539));
+    background:-webkit-linear-gradient(top,  #199fd2 0%,#2C3539 150%);
+    background:-o-linear-gradient(top, #199fd2 0%,#2C3539 150%);
+    background:-ms-linear-gradient(top, #199fd2 0%,#2C3539 150%);
+    background:linear-gradient(top,  #199fd2 0%,#2C3539 150%);
+    filter:progid:DXImageTransform.Microsoft.gradient( startColorstr='#199fd2', endColorstr='#30576e',GradientType=0);
 }
 
 .header h2 {
-	margin: 0 25px;
-	color:#ffffee;
-	text-shadow: 2px 2px #000;
+    margin: 0 25px;
+    color:#ffffee;
+    text-shadow: 2px 2px #000;
 }
 
 .header h3, .header .gwt-Image {
-	margin-top:0px;
-	margin-left:35px;
-	color:#ffffee;
-	text-shadow: 2px 2px #000;
+    margin-top:0px;
+    margin-left:35px;
+    color:#ffffee;
+    text-shadow: 2px 2px #000;
 }
 
 .rootTable h2 {
-	color:#ffffee;
-	text-shadow: 2px 2px #000;
-	text-decoration: none;
-	padding: 10px;
-	border-radius: 5px;
+    color:#ffffee;
+    text-shadow: 2px 2px #000;
+    text-decoration: none;
+    padding: 10px;
+    border-radius: 5px;
 }
 
 .header .gwt-Label {
-	color:#fff;
+    color:#fff;
 }
 
 .tableLeft {
-	border-radius: 10px;
-	box-shadow: 0px 4px 4px #000;
+    border-radius: 10px;
+    box-shadow: 0px 4px 4px #000;
 }
 
 .tableRight .gwt-Image {
-	margin-top: 13px;
+    margin-top: 13px;
 }
 
 h2{
-/* 	text-decoration:underline; */
+/*     text-decoration:underline; */
 }
 /* .gwt-viz-container { */
-/* 	border-radius: 10px; */
-/* 	box-shadow: 0px 4px 0px #000;	 */
+/*     border-radius: 10px; */
+/*     box-shadow: 0px 4px 0px #000;     */
 /* }  */
 
 .topHeader {
-	position:fixed;
-	text-align: center;
-/* 	width:100%; */
-	padding-top: 5px;
-	top: 0;
-	left: 50%;
- 	margin-left: -420px; /* The length of the toolbar */
-	z-index:999;
+    position:fixed;
+    text-align: center;
+/*     width:100%; */
+    padding-top: 5px;
+    top: 0;
+    left: 50%;
+     margin-left: -420px; /* The length of the toolbar */
+    z-index:999;
     opacity: 0.8;
 }
 
 .topHeader * {
-	margin: 0 5px;
+    margin: 0 5px;
 }
 
 .topHeader .gwt-Label {
-	margin-top: 5px;
+    margin-top: 5px;
 }
 
 .autoPanel .gwt-Label {
-	margin-top: 0px;
+    margin-top: 0px;
 }
 
 .autoPanel .gwt-CheckBox {
-	margin-left: 30px;
+    margin-left: 30px;
 }
 
 .autoPanel {
-	text-align: center;	
+    text-align: center;    
 }
 
 .centerText * {
-	text-align: center !important;	
+    text-align: center !important;    
 }
 
 .sendButton {
@@ -161,8 +165,8 @@ h2{
 }
 
 .serverResponseLabelError.rootTable .gwt-Image {
-	text-align: center;
-	color: red;
+    text-align: center;
+    color: red;
 }
 
 /** Set ids using widget.getElement().setId("idOfElement") */
@@ -178,8 +182,8 @@ h2{
 }
 
 .rootTable .gwt-Image {
-	display: block;
-	margin-left: auto;
+    display: block;
+    margin-left: auto;
     margin-right: auto;
 }
 
