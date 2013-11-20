@@ -132,6 +132,24 @@ public class StatsServiceImpl extends RemoteServiceServlet implements StatsServi
     }
 
     @Override
+    public ArrayList<String> getUsers(String company) {
+        ArrayList<String> result = new ArrayList<String>();
+        try {
+            Connection conn = getConnection(company);
+            PreparedStatement ps = conn.prepareStatement("SELECT ID, Short_Name, Full_Name FROM Operators;");
+            ResultSet rs = ps.executeQuery();
+            while(rs.next())
+                result.add(rs.getInt("ID") + " > " + rs.getString("Short_Name") + " > " + rs.getString("Full_name"));
+            rs.close();
+            ps.close();
+            conn.close();
+        } catch(SQLException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    @Override
     public HashMap<String, String> getStores(String company) {
         HashMap<String, String> result = new HashMap<String, String>();
         try {

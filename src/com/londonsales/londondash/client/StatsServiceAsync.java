@@ -19,4 +19,6 @@ public interface StatsServiceAsync {
             AsyncCallback<HashMap<String, String>> callback);
     void getProducts(String company,
             AsyncCallback<ArrayList<String>> callback);
+    void getUsers(String company,
+            AsyncCallback<ArrayList<String>> callback);
 }

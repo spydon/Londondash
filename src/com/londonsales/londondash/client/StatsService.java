@@ -11,9 +11,10 @@ import com.google.gwt.user.client.rpc.RemoteServiceRelativePath;
  */
 @RemoteServiceRelativePath("stats")
 public interface StatsService extends RemoteService {
-	String getDataTable(String company, String stmt);
-	String getString(String company, String stmt);
-	HashMap<String, Integer> getRegions(String company);
-	HashMap<String, String> getStores(String company);
+    String getDataTable(String company, String stmt);
+    String getString(String company, String stmt);
+    HashMap<String, Integer> getRegions(String company);
+    HashMap<String, String> getStores(String company);
     ArrayList<String> getProducts(String company);
+    ArrayList<String> getUsers(String company);
 }
