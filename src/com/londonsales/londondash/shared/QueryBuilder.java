@@ -24,7 +24,11 @@ public class QueryBuilder implements Serializable {
         return getQuery();
     }
 
-   public String appendSelect(String select) {
+    public String getSelect() {
+        return this.select;
+    }
+
+    public String appendSelect(String select) {
         if(select.equals("")) {
             this.select = select;
         } else {
@@ -87,5 +91,10 @@ public class QueryBuilder implements Serializable {
         query = query.concat(groupBy.equals("") ? "" : " GROUP BY " + groupBy);
         query = query.concat(orderBy.equals("") ? "" : " ORDER BY " + orderBy);
         return query;
+    }
+
+    @Override
+    public String toString() {
+        return getQuery();
     }
 }

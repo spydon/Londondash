@@ -150,11 +150,29 @@ public class StatsServiceImpl extends RemoteServiceServlet implements StatsServi
     }
 
     @Override
+    public ArrayList<String> getStands(String company) {
+        ArrayList<String> result = new ArrayList<String>();
+        try {
+            Connection conn = getConnection(company);
+            PreparedStatement ps = conn.prepareStatement("SELECT ID, Name FROM Division;");
+            ResultSet rs = ps.executeQuery();
+            while(rs.next())
+                result.add(rs.getInt("ID") + " > " + rs.getString("Name"));
+            rs.close();
+            ps.close();
+            conn.close();
+        } catch(SQLException e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    @Override
     public HashMap<String, String> getStores(String company) {
         HashMap<String, String> result = new HashMap<String, String>();
         try {
             Connection conn = getConnection(company);
-            PreparedStatement ps = conn.prepareStatement("SELECT ID, Name, Data_Table FROM stores WHERE ID <> 1 AND Is_Stock = 1 ORDER BY Name");
+            PreparedStatement ps = conn.prepareStatement("SELECT ID, Name, Data_Table FROM stores WHERE ID <> 1 ORDER BY Name");
             ResultSet rs = ps.executeQuery();
             while(rs.next())
                 result.put(rs.getString("Name"), rs.getString("Data_Table") + ":" + rs.getString("ID"));

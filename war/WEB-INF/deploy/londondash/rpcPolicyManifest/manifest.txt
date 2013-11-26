@@ -1,2 +1,3 @@
 # Module londondash
 # RPC service class, partial path of RPC policy file
+com.londonsales.londondash.client.StatsService, 3705841316D03FB972AB605160006ADE.gwt.rpc

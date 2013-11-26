@@ -9,6 +9,8 @@ import java.util.Map.Entry;
 
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.event.dom.client.BlurEvent;
+import com.google.gwt.event.dom.client.BlurHandler;
 import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.dom.client.ClickEvent;
@@ -85,9 +87,12 @@ public class Londondash implements EntryPoint {
     private final HTML headerName = new HTML("<h1>OR Dashboard</h1>");
     private final MultiWordSuggestOracle productOracle = new MultiWordSuggestOracle();
     private final MultiWordSuggestOracle userOracle = new MultiWordSuggestOracle();
+    private final MultiWordSuggestOracle standOracle = new MultiWordSuggestOracle();
     private final ArrayList<SuggestBox> productList = new ArrayList<SuggestBox>();
     private final ArrayList<SuggestBox> userList = new ArrayList<SuggestBox>();
     private final ArrayList<SuggestBox> userList2 = new ArrayList<SuggestBox>();
+    private final ArrayList<SuggestBox> standList = new ArrayList<SuggestBox>();
+
 
     private enum Placement {
         LEFT, RIGHT, FULL
@@ -344,6 +349,8 @@ public class Londondash implements EntryPoint {
         final SuggestBox productField = new SuggestBox(this.productOracle);
         final Button newTag = new Button("+");
         final Button delTag = new Button("-");
+        newTag.setWidth("40px");
+        delTag.setWidth("40px");
         HorizontalPanel buttonPanel = new HorizontalPanel();
         buttonPanel.add(newTag);
         buttonPanel.add(delTag);
@@ -406,6 +413,8 @@ public class Londondash implements EntryPoint {
         final SuggestBox userField = new SuggestBox(this.userOracle);
         final Button newTag = new Button("+");
         final Button delTag = new Button("-");
+        newTag.setWidth("40px");
+        delTag.setWidth("40px");
         HorizontalPanel buttonPanel = new HorizontalPanel();
         buttonPanel.add(newTag);
         buttonPanel.add(delTag);
@@ -461,6 +470,8 @@ public class Londondash implements EntryPoint {
         final SuggestBox userField = new SuggestBox(this.userOracle);
         final Button newTag = new Button("+");
         final Button delTag = new Button("-");
+        newTag.setWidth("40px");
+        delTag.setWidth("40px");
         HorizontalPanel buttonPanel = new HorizontalPanel();
         buttonPanel.add(newTag);
         buttonPanel.add(delTag);
@@ -508,6 +519,70 @@ public class Londondash implements EntryPoint {
                             generateUserSalesQuery().getQuery(),
                             ((dateOption.equals("This year") || dateOption.equals("Custom")) ? CoreChart.Type.LINE : CoreChart.Type.BARS), chartPanel, true);
                 }
+            }
+        });
+    }
+
+    private void createStandControl(final FlexTable suggestTable, final Panel chartPanel, final int row, String standText, boolean active) {
+        final SuggestBox standField = new SuggestBox(this.standOracle);
+        final Button newTag = new Button("+");
+        final Button delTag = new Button("-");
+        newTag.setWidth("40px");
+        delTag.setWidth("40px");
+        HorizontalPanel buttonPanel = new HorizontalPanel();
+        buttonPanel.add(newTag);
+        buttonPanel.add(delTag);
+        suggestTable.setWidget(row, 0, standField);
+        suggestTable.setWidget(row, 1, buttonPanel);
+        standField.setFocus(active);
+        standField.setEnabled(active);
+        standField.setText(standText);
+        standField.setTitle("Start writing to choose a product to compare with in the text box, if it doesn't exist the box will turn red.");
+        standList.add(standField);
+        newTag.addClickHandler(new ClickHandler() {
+            @Override
+            public void onClick(ClickEvent event) {
+                if(!standField.getText().equals("") && standField.getText().contains(">")) {
+                    standField.removeStyleName("oracleError");
+                    Cell cell = suggestTable.getCellForEvent(event);
+                    suggestTable.insertRow(cell.getRowIndex()+1);
+                    createStandControl(suggestTable, chartPanel, cell.getRowIndex()+1, "", true);
+                    standField.setEnabled(false);
+                    createChart(
+                            "Product Development",
+                            generateStandQuery().getQuery(),
+                            ((dateOption.equals("This year") || dateOption.equals("Custom")) ? CoreChart.Type.AREA : CoreChart.Type.BARS), chartPanel, true);
+                } else {
+                    standField.addStyleName("oracleError");
+                }
+            }
+        });
+        delTag.addClickHandler(new ClickHandler() {
+            @Override
+            public void onClick(ClickEvent event) {
+                Cell cell = suggestTable.getCellForEvent(event);
+                standList.remove(standField);
+
+                if(suggestTable.getRowCount() > 1) {
+                    suggestTable.removeRow(cell.getRowIndex());
+                } else {
+                    standField.setText("");
+                    standField.setEnabled(true);
+                }
+
+                if(standField.getText().contains(">")) {
+                    createChart(
+                            "Product Development",
+                            generateStandQuery().getQuery(),
+                            ((dateOption.equals("This year") || dateOption.equals("Custom")) ? CoreChart.Type.AREA : CoreChart.Type.BARS), chartPanel, true);
+                }
+            }
+        });
+        standField.addKeyUpHandler(new KeyUpHandler() {
+            @Override
+            public void onKeyUp(KeyUpEvent event) {
+//                if (event.getNativeKeyCode() == KeyCodes.KEY_ENTER)
+//                    newTag.click();
             }
         });
     }
@@ -622,6 +697,44 @@ public class Londondash implements EntryPoint {
         return q;
     }
 
+    public QueryBuilder generateStandQuery() {
+        QueryBuilder q = new QueryBuilder(
+                "DATENAME(m,l1.modified_date) As Month",
+                "Sales_Transactions_Header As l1",
+                "l1.modified_date >= " + dateFrom + " AND l1.modified_date <= " + dateTo,
+                "DATENAME(m,l1.modified_date), DATEPART(MM,l1.modified_date)",
+                "DATEPART(MM,l1.modified_date)");
+        ArrayList<String> standIds = new ArrayList<String>();
+        ArrayList<String> standNames = new ArrayList<String>();
+
+        for(SuggestBox box : standList) {
+            if(!box.getText().contains(">"))
+                continue;
+            String standId = box.getText().substring(0, box.getText().indexOf(">")-1);
+            String standName = box.getText().substring(box.getText().indexOf(">")+1, box.getText().length()-1);
+
+            if(!standIds.contains(standId)) {
+                standIds.add(standId);
+                standNames.add(standName);
+            }
+        }
+        //TODO
+        for(String standId : standIds) {
+            int i = standIds.indexOf(standId);
+            String storeQ = !store.equals("") ? "AND l0" + i + ".Store_ID = " + storeIDs.get(storeLb.getItemText(storeLb.getSelectedIndex())) : "";
+            String regionQ = region!=-1 && store.equals("") ? "AND l00" + i + ".Region_ID = " + region : "";
+            q.appendSelect("ISNULL([" + standNames.get(standIds.indexOf(standId)) + "], 0) As '" + standNames.get(standIds.indexOf(standId)) + "'");
+            q.appendFrom("LEFT OUTER JOIN (SELECT DATENAME(m,l0" + i + ".modified_date) As Month, "
+                    + "SUM(Gross) As '" + standNames.get(standIds.indexOf(standId)) + "' " +
+                    "FROM Sales_Transactions_Header l0" + i + " " +
+                    "WHERE Sales_Type = 'INVOICE' AND Branch_ID = '" + standId + "' " + storeQ + regionQ +
+                    " GROUP BY DATENAME(m,l0" + i + ".modified_date), DATEPART(MM,l0" + i + ".modified_date)) l2" + i +
+                    " ON DATENAME(m,l1.modified_date) = l2" + i + ".Month ");
+            q.appendGroupBy("[" + standNames.get(standIds.indexOf(standId)) + "]");
+        }
+        return q;
+    }
+
 //    @DEPRECATED
 //    private SelectHandler createSelectHandler(final CoreChart chart) {
 //        return new SelectHandler() {
@@ -675,6 +788,7 @@ public class Londondash implements EntryPoint {
 
             @Override
             public void onSuccess(ArrayList<String> result) {
+                productOracle.clear();
                 productOracle.addAll(result);
             }
         });
@@ -689,7 +803,23 @@ public class Londondash implements EntryPoint {
 
             @Override
             public void onSuccess(ArrayList<String> result) {
+                userOracle.clear();
                 userOracle.addAll(result);
+            }
+        });
+    }
+
+    public void updateStandOracle() {
+        statsService.getStands(company, new AsyncCallback<ArrayList<String>> () {
+            @Override
+            public void onFailure(Throwable caught) {
+
+            }
+
+            @Override
+            public void onSuccess(ArrayList<String> result) {
+                standOracle.clear();
+                standOracle.addAll(result);
             }
         });
     }
@@ -808,9 +938,14 @@ public class Londondash implements EntryPoint {
                         .getSelectedIndex());
                 if (!option.equals(company)) {
                     productList.clear();
+                    userList.clear();
+                    userList2.clear();
 
                     company = option.toLowerCase();
                     region = -1;
+                    updateUserOracle();
+                    updateProductOracle();
+                    updateStandOracle();
                     updateRegions();
                     updateStores();
                     update(dateFrom, dateTo);
@@ -821,6 +956,7 @@ public class Londondash implements EntryPoint {
 
         // Connect a listener to the regions listbox to update charts when it changes
         regionsLb.addChangeHandler(new ChangeHandler() {
+
 
             @Override
             public void onChange(ChangeEvent event) {
@@ -1062,16 +1198,29 @@ public class Londondash implements EntryPoint {
                 if(region!=-1)
                     q1.appendWhere("Division.Region_ID = " + region);
 
-                createChart(
-                        "Total Sales by Division",
-                        q1.getQuery(),
-                        CoreChart.Type.NONE, tablePanel1, true);
 
                 //Building graph for the locations total
                 createChart(
                         "Total Sales by Division",
                         q1.setOrderBy(""),
                         CoreChart.Type.PIE, chartPanel1, true);
+
+                //Building table after graph to be able to change the query
+                q1.appendFrom("LEFT OUTER JOIN (SELECT Distinct(Branch_ID) As Branch_ID, "
+                        + "MAX(modified_date) As [Last Activity] FROM Sales_Transactions_Header "
+                        + "GROUP BY Branch_ID) lt ON Sales_Transactions_Header.Branch_ID = lt.Branch_ID "
+                        + "LEFT OUTER JOIN Regions on Division.Region_ID = Regions.ID");
+
+                q1.setSelect("ISNULL(Regions.Name, '') As Region, " + q1.getSelect());
+                q1.appendSelect("(LEFT(CONVERT(VARCHAR, [Last Activity], 113), 7) + "
+                        + "LEFT(CONVERT(VARCHAR, [Last Activity], 8), 5)) As [Last Activity]");
+                q1.setGroupBy("Division.Name, [Last Activity], Regions.Name HAVING ROUND(SUM(Gross), 0) > 0");
+                q1.setOrderBy("'Total($)' DESC");
+                createChart(
+                        "Total Sales by Division",
+                        q1.getQuery(),
+                        CoreChart.Type.NONE, tablePanel1, true);
+
                 addSection("Total Sales by Location", tablePanel1, chartPanel1, null);
 
                 //
@@ -1082,7 +1231,7 @@ public class Londondash implements EntryPoint {
 
                 //Building table for the Employee total
                 QueryBuilder q2 = new QueryBuilder(
-                        "Sales_Transactions_Header.Operator_Name, ROUND(SUM(Sales_Transactions_Header.Gross), 0) AS 'Total($)'",
+                        "Sales_Transactions_Header.Operator_Name AS [Operator Name], ROUND(SUM(Sales_Transactions_Header.Gross), 0) AS 'Total($)'",
                         "Sales_Transactions_Header",
                         "Sales_Type = 'INVOICE' AND Sale_Date >= " + from + " AND Sale_Date <= " + to,
                         "Operator_Name HAVING ROUND(SUM(Sales_Transactions_Header.Gross), 0) >= 0",
@@ -1164,7 +1313,7 @@ public class Londondash implements EntryPoint {
                     createChart(
                             "User Development",
                             generateUserSalesQuery().getQuery(),
-                            CoreChart.Type.COLUMNS, chartPanel7, true);
+                            ((dateOption.equals("This year") || dateOption.equals("Custom")) ? CoreChart.Type.LINE : CoreChart.Type.COLUMNS), chartPanel7, true);
                 }
 
                 //TODO
@@ -1207,15 +1356,16 @@ public class Londondash implements EntryPoint {
                 final ListBox topBottomLb = new ListBox();
                 topBottomLb.addItem("TOP");
                 topBottomLb.addItem("BOTTOM");
+                topBottomLb.setSelectedIndex(isTop ? 0 : 1);
                 final TextBox numberTb = new TextBox();
-                numberTb.setText("5");
+                numberTb.setText(""+numberOfProducts);
                 numberTb.setWidth("25px");
                 Button drawB = new Button("Draw graph");
                 drawB.addClickHandler(new ClickHandler() {
                     @Override
                     public void onClick(ClickEvent event) {
                         if(!tryParseInt(numberTb.getText())) {
-                            numberTb.setText("5");
+                            numberTb.setText(""+numberOfProducts);
                         }
                         isTop = (topBottomLb.getItemText(topBottomLb.getSelectedIndex()).equals("TOP")) ? true : false;
                         numberOfProducts = Integer.parseInt(numberTb.getText());
@@ -1225,6 +1375,21 @@ public class Londondash implements EntryPoint {
                                     generateUserProductQuery().getQuery(),
                                     CoreChart.Type.COLUMNS, chartPanel6, true);
                         }
+                    }
+                });
+                numberTb.addBlurHandler(new BlurHandler() {
+                    @Override
+                    public void onBlur(BlurEvent event) {
+                        if(!tryParseInt(numberTb.getText())) {
+                            numberTb.setText(""+numberOfProducts);
+                        }
+                        numberOfProducts = Integer.parseInt(numberTb.getText());
+                    }
+                });
+                topBottomLb.addChangeHandler(new ChangeHandler() {
+                    @Override
+                    public void onChange(ChangeEvent event) {
+                        isTop = (topBottomLb.getItemText(topBottomLb.getSelectedIndex()).equals("TOP")) ? true : false;
                     }
                 });
                 HorizontalPanel optionsPanel = new HorizontalPanel();
@@ -1245,6 +1410,43 @@ public class Londondash implements EntryPoint {
                         null, userPanel, false);
 
                 addSection("User-product status", userPanel, chartPanel6, null);
+
+                //
+                // Setting up Stand development
+                //
+                updateStandOracle();
+                final FlowPanel chartPanel8 = new FlowPanel();
+                VerticalPanel standPanel = new VerticalPanel();
+                FlexTable standTable = new FlexTable();
+                Label instructions4 = new Label("Start writing in the box to choose stands");
+                @SuppressWarnings("unchecked")
+                ArrayList<SuggestBox> tmpList4 = (ArrayList<SuggestBox>) standList.clone();
+                for(SuggestBox box : standList)
+                    if(!box.getText().contains(">"))
+                        tmpList4.remove(box);
+                standList.clear();
+                for(SuggestBox box : tmpList4)
+                    createStandControl(standTable, chartPanel8, tmpList4.indexOf(box), box.getText(), false);
+                createStandControl(standTable, chartPanel8, tmpList4.size(), "", true);
+                if(standList.size() > 0 && standList.get(0).getText().contains(">")) {
+                    createChart(
+                            "Stand Development",
+                            generateStandQuery().getQuery(),
+                            ((dateOption.equals("This year") || dateOption.equals("Custom")) ? CoreChart.Type.LINE : CoreChart.Type.COLUMNS), chartPanel8, true);
+                }
+
+                //TODO
+                standPanel.add(instructions4);
+                standPanel.add(standTable);
+
+                //Building graph for the Stand development
+                createChart(
+                        "Stand Development",
+                        null,
+                        null, standPanel, false);
+
+                addSection("Stand Development", standPanel, chartPanel8, null);
+
 
                 //
                 // Setting up total sales by product section
@@ -1470,9 +1672,7 @@ public class Londondash implements EntryPoint {
                 + "<ul><li>Change any graph by using the graph chooser underneath each graph</li>"
                 + "<li>Hold over each part of the graph to get more information</li>"
                 + "<li>Order the table after a different column by pressing the column name</li>"
-                + "<li>Start writing in the procuct development section box and it will give you suggestions</li>"
-                + "<li>Start writing in the user development section box and it will give you suggestions or users</li>"
-                + "<li>Start writing in the user-procuct section box and it will give you suggestions or users</li>"
+                + "<li>Start writing in the procuct development, user development, user-procuct or stand section box and it will give you suggestions</li>"
                 + "<li>You can choose either top or bottom selling products in the user-product section and how many to show</li>"
                 + "</ul>"
                 + "If you need further help, send a mail to <a href=\"mailto:lukas.klingsbo@gmail.com\">lukas.klingsbo@gmail.com</a>");

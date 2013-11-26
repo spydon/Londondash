@@ -17,4 +17,5 @@ public interface StatsService extends RemoteService {
     HashMap<String, String> getStores(String company);
     ArrayList<String> getProducts(String company);
     ArrayList<String> getUsers(String company);
+    ArrayList<String> getStands(String company);
 }

@@ -21,4 +21,6 @@ public interface StatsServiceAsync {
             AsyncCallback<ArrayList<String>> callback);
     void getUsers(String company,
             AsyncCallback<ArrayList<String>> callback);
+    void getStands(String company,
+            AsyncCallback<ArrayList<String>> callback);
 }
