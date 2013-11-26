@@ -84,7 +84,7 @@ public class Londondash implements EntryPoint {
     private final HashMap<String, Integer> storeIDs = new HashMap<String, Integer>();
     private final ListBox regionsLb = new ListBox();
     private final ListBox storeLb = new ListBox();
-    private final HTML headerName = new HTML("<h1>OR Dashboard</h1>");
+    private final HTML headerName = new HTML("<h1>" + capitalizeName(company) + " Dashboard</h1>");
     private final MultiWordSuggestOracle productOracle = new MultiWordSuggestOracle();
     private final MultiWordSuggestOracle userOracle = new MultiWordSuggestOracle();
     private final MultiWordSuggestOracle standOracle = new MultiWordSuggestOracle();
@@ -93,6 +93,9 @@ public class Londondash implements EntryPoint {
     private final ArrayList<SuggestBox> userList2 = new ArrayList<SuggestBox>();
     private final ArrayList<SuggestBox> standList = new ArrayList<SuggestBox>();
 
+    private boolean companyChange = false;
+    private boolean regionChange = false;
+    private boolean storeChange = false;
 
     private enum Placement {
         LEFT, RIGHT, FULL
@@ -146,7 +149,7 @@ public class Londondash implements EntryPoint {
         loginButton.addClickHandler(new ClickHandler() {
             @Override
             public void onClick(ClickEvent event) {
-                if(passwordTB.getValue().equals("citylink")) {
+                if(setPermissions(passwordTB.getValue())) {
                     loginBox.hide();
                     firstInit();
                 } else {
@@ -159,7 +162,7 @@ public class Londondash implements EntryPoint {
             @Override
             public void onKeyUp(KeyUpEvent event) {
                 if(event.getNativeKeyCode() == KeyCodes.KEY_ENTER) {
-                    if(passwordTB.getValue().equals("citylink")) {
+                    if(setPermissions(passwordTB.getValue())) {
                         loginBox.hide();
                         firstInit();
                     } else {
@@ -171,6 +174,56 @@ public class Londondash implements EntryPoint {
         });
         loginBox.center();
         passwordTB.setFocus(true);
+    }
+
+    protected boolean setPermissions(String value) {
+        if(value.equals("citylink")) {
+            companyChange = true;
+            regionChange = true;
+            storeChange = true;
+            return true;
+        } else if(value.equals("citylink1")) {
+            company = "or";
+            companyChange = false;
+            regionChange = true;
+            storeChange = true;
+            return true;
+        } else if(value.equals("citylink2")) {
+            company = "jericho";
+            companyChange = false;
+            regionChange = true;
+            storeChange = true;
+            return true;
+        } else if(value.equals("citylink3")) {
+            company = "or";
+            region = 1;
+            companyChange = false;
+            regionChange = false;
+            storeChange = true;
+            return true;
+        } else if(value.equals("citylink4")) {
+            company = "or";
+            region = 2;
+            companyChange = false;
+            regionChange = false;
+            storeChange = true;
+            return true;
+        } else if(value.equals("citylink5")) {
+            company = "jericho";
+            region = 1;
+            companyChange = false;
+            regionChange = false;
+            storeChange = true;
+            return true;
+        } else if(value.equals("citylink6")) {
+            company = "jericho";
+            region = 2;
+            companyChange = false;
+            regionChange = false;
+            storeChange = true;
+            return true;
+        }
+        return false;
     }
 
     private void firstInit() {
@@ -537,7 +590,7 @@ public class Londondash implements EntryPoint {
         standField.setFocus(active);
         standField.setEnabled(active);
         standField.setText(standText);
-        standField.setTitle("Start writing to choose a product to compare with in the text box, if it doesn't exist the box will turn red.");
+        standField.setTitle("Start writing to choose a stand to compare with in the text box, if it doesn't exist the box will turn red.");
         standList.add(standField);
         newTag.addClickHandler(new ClickHandler() {
             @Override
@@ -929,8 +982,11 @@ public class Londondash implements EntryPoint {
         });
 
         final ListBox companyLb = new ListBox();
+        if(!companyChange)
+            companyLb.setVisible(false);
         companyLb.addItem("OR");
         companyLb.addItem("Jericho");
+        headerName.setHTML("<h1>" + capitalizeName(company) + " Dashboard</h1>");
         companyLb.addChangeHandler(new ChangeHandler() {
             @Override
             public void onChange(ChangeEvent event) {
@@ -954,6 +1010,8 @@ public class Londondash implements EntryPoint {
             }
         });
 
+        if(!regionChange)
+            regionsLb.setVisible(false);
         // Connect a listener to the regions listbox to update charts when it changes
         regionsLb.addChangeHandler(new ChangeHandler() {
 
@@ -969,6 +1027,8 @@ public class Londondash implements EntryPoint {
             }
         });
 
+        if(!storeChange)
+            storeLb.setVisible(false);
         //ListBox for the stores
         storeLb.addChangeHandler(new ChangeHandler() {
             @Override
@@ -1669,11 +1729,14 @@ public class Londondash implements EntryPoint {
                 + "<li>Update - Manually fetches new data from within your set scopes</li>"
                 + "<li>Help - Opens up this dialog</li></ul>"
                 + "<b>Tips and tricks</b><br />"
-                + "<ul><li>Change any graph by using the graph chooser underneath each graph</li>"
+                + "<ul>"
+                + "<li>Change any graph by using the graph chooser underneath each graph</li>"
                 + "<li>Hold over each part of the graph to get more information</li>"
                 + "<li>Order the table after a different column by pressing the column name</li>"
                 + "<li>Start writing in the procuct development, user development, user-procuct or stand section box and it will give you suggestions</li>"
+                + "<li>Procuct development, user development, user-procuct and stand section gives most useful data when the time period is greater than 2 months</li>"
                 + "<li>You can choose either top or bottom selling products in the user-product section and how many to show</li>"
+                + "<li>Remember that all graphs and tables except for the stock-table are affected by what time-frames you have set in the top bar</li>"
                 + "</ul>"
                 + "If you need further help, send a mail to <a href=\"mailto:lukas.klingsbo@gmail.com\">lukas.klingsbo@gmail.com</a>");
 
@@ -1701,5 +1764,21 @@ public class Londondash implements EntryPoint {
         } catch(NumberFormatException nfe) {
             return false;
         }
+    }
+
+    private static String capitalizeName(String name) {
+        String nameList[] = name.split(" ");
+        String capitalizedName = "";
+        for(int x = 0; x<nameList.length; x++) {
+            String tmpName = nameList[x];
+            if(!tmpName.equals("")) {
+                char letter = Character.toUpperCase(tmpName.charAt(0));
+                tmpName = Character.toString(letter).concat(tmpName.substring(1));
+                capitalizedName = capitalizedName.concat(tmpName);
+                if(!(x==nameList.length-1))
+                    capitalizedName = capitalizedName.concat(" ");
+            }
+        }
+        return capitalizedName;
     }
 }
