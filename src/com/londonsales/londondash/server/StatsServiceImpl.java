@@ -16,20 +16,21 @@ import com.londonsales.londondash.client.StatsService;
 public class StatsServiceImpl extends RemoteServiceServlet implements StatsService {
     private java.sql.Connection conn = null;
     //private final String url = "jdbc:microsoft:sqlserver://";
-    private final String[] serverName = {"203.143.84.21", "168.144.171.93"};
+//    private final String[] serverName = {"203.143.84.21", "168.144.171.93"};
+  private final String[] serverName = {"203.143.84.21", "203.143.84.21"};
     //private final String[] portNumber = {"1433", "1433"};
-    private final String[] databaseName = {"BBSMain", "London_HQ"};
+    private final String[] databaseName = {"BBSMain", "LS_QLD"};
     private final String[] userName = {"sa", "sa"};
-    private final String[] password = {"bbs1955", "bbs1955%E"};
+    private final String[] password = {"bbs1955", "bbs1955"}; //bbs1955%E
 
     private Connection getConnection(String company) {
         try {
                 int companyNumber = 0;
                 switch(company.toLowerCase()) {
-                    case "or":
+                    case "qld":
                         companyNumber = 1;
                         break;
-                    case "jericho":
+                    case "vic":
                         companyNumber = 0;
                         break;
                 }
@@ -47,8 +48,8 @@ public class StatsServiceImpl extends RemoteServiceServlet implements StatsServi
         return conn;
     }
 
-    // 0 is Jericho
-    // 1 is OR
+    // 0 is victoria
+    // 1 is qld
     private String getConnectionUrl(int company) {
         String url = "";
         if(company < serverName.length && company >= 0)

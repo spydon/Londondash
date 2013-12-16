@@ -74,7 +74,7 @@ public class Londondash implements EntryPoint {
     private int usedRows = 0;
     private static int DELAY = 600;
     private int count = DELAY;
-    private String company = "or";
+    private String company = "VIC";
     private int region = -1;
     private String store = "";
     private boolean isTop = true;
@@ -84,7 +84,7 @@ public class Londondash implements EntryPoint {
     private final HashMap<String, Integer> storeIDs = new HashMap<String, Integer>();
     private final ListBox regionsLb = new ListBox();
     private final ListBox storeLb = new ListBox();
-    private final HTML headerName = new HTML("<h1>" + capitalizeName(company) + " Dashboard</h1>");
+    private final HTML headerName = new HTML("<h1>" + company + " Dashboard</h1>");
     private final MultiWordSuggestOracle productOracle = new MultiWordSuggestOracle();
     private final MultiWordSuggestOracle userOracle = new MultiWordSuggestOracle();
     private final MultiWordSuggestOracle standOracle = new MultiWordSuggestOracle();
@@ -183,40 +183,40 @@ public class Londondash implements EntryPoint {
             storeChange = true;
             return true;
         } else if(value.equals("citylink1")) {
-            company = "or";
+            company = "QLD";
             companyChange = false;
             regionChange = true;
             storeChange = true;
             return true;
         } else if(value.equals("citylink2")) {
-            company = "jericho";
+            company = "VIC";
             companyChange = false;
             regionChange = true;
             storeChange = true;
             return true;
         } else if(value.equals("citylink3")) {
-            company = "or";
+            company = "QLD";
             region = 1;
             companyChange = false;
             regionChange = false;
             storeChange = true;
             return true;
         } else if(value.equals("citylink4")) {
-            company = "or";
+            company = "QLD";
             region = 2;
             companyChange = false;
             regionChange = false;
             storeChange = true;
             return true;
         } else if(value.equals("citylink5")) {
-            company = "jericho";
+            company = "VIC";
             region = 1;
             companyChange = false;
             regionChange = false;
             storeChange = true;
             return true;
         } else if(value.equals("citylink6")) {
-            company = "jericho";
+            company = "VIC";
             region = 2;
             companyChange = false;
             regionChange = false;
@@ -984,9 +984,10 @@ public class Londondash implements EntryPoint {
         final ListBox companyLb = new ListBox();
         if(!companyChange)
             companyLb.setVisible(false);
-        companyLb.addItem("OR");
-        companyLb.addItem("Jericho");
-        headerName.setHTML("<h1>" + capitalizeName(company) + " Dashboard</h1>");
+        companyLb.addItem("VIC");
+        companyLb.addItem("QLD");
+//        headerName.setHTML("<h1>" + capitalizeName(company) + " Dashboard</h1>");
+      headerName.setHTML("<h1>" + company + " Dashboard</h1>");
         companyLb.addChangeHandler(new ChangeHandler() {
             @Override
             public void onChange(ChangeEvent event) {
@@ -1294,7 +1295,8 @@ public class Londondash implements EntryPoint {
                         "Sales_Transactions_Header.Operator_Name AS [Operator Name], ROUND(SUM(Sales_Transactions_Header.Gross), 0) AS 'Total($)'",
                         "Sales_Transactions_Header",
                         "Sales_Type = 'INVOICE' AND Sale_Date >= " + from + " AND Sale_Date <= " + to,
-                        "Operator_Name HAVING ROUND(SUM(Sales_Transactions_Header.Gross), 0) >= 0",
+                        "Operator_Name",
+                        //"Operator_Name HAVING ROUND(SUM(Sales_Transactions_Header.Gross), 0) >= 0",
                         "'Total($)' DESC");
 
                 if(!store.equals("")) {
