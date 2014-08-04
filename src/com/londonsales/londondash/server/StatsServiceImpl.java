@@ -17,11 +17,11 @@ public class StatsServiceImpl extends RemoteServiceServlet implements StatsServi
     private java.sql.Connection conn = null;
     //private final String url = "jdbc:microsoft:sqlserver://";
 //    private final String[] serverName = {"203.143.84.21", "168.144.171.93"};
-  private final String[] serverName = {"203.143.84.21", "203.143.84.21"};
+  private final String[] serverName = {};
     //private final String[] portNumber = {"1433", "1433"};
-    private final String[] databaseName = {"BBSMain", "LS_QLD"};
-    private final String[] userName = {"sa", "sa"};
-    private final String[] password = {"bbs1955", "bbs1955"}; //bbs1955%E
+    private final String[] databaseName = {};
+    private final String[] userName = {};
+    private final String[] password = {}; 
 
     private Connection getConnection(String company) {
         try {
